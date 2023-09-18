@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package mavsdk.rpc.gimbal_manager_server;
+
+import "mavsdk_options.proto";
+
+option java_package = "io.mavsdk.gimbal_manager_server";
+option java_outer_classname = "GimbalManagerServerProto";
+
+// Provides handling of gimbal manager commands
+service GimbalManagerServerService {
+    // Sets the gimbal manager information. This must be called as soon as the gimbal manager server is created.
+    rpc SetInformation(SetInformationRequest) returns(SetInformationResponse) { option (mavsdk.options.async_type) = SYNC; }
+    // Get the GPS location of where the estimator has been initialized.
+    rpc GetStatus(GetStatusRequest) returns(GetStatusResponse) { option (mavsdk.options.async_type) = SYNC; }
+    // Subscribe to gimbal manager set roi requests
+    rpc SubscribeSetRoi(SubscribeSetRoiRequest) returns(stream SetRoiResponse) { option (mavsdk.options.async_type) = ASYNC; }
+}
+
+message SetInformationRequest {
+    Information information = 1; // information about the gimbal manager
+}
+
+message SetInformationResponse {
+    GimbalManagerServerResult gimbal_manager_server_result = 1;
+}
+
+message GetStatusRequest {}
+message GetStatusResponse {
+    Status status = 1;
+}
+
+message SubscribeSetRoiRequest {}
+message SetRoiResponse {
+    RoiLocation roi_location = 1; // The next roi_location
+}
+
+// Set Gimbal manager hardware informations.
+message Information {
+    uint32 cap_flags = 1; // Bitmap of gimbal capability flags.
+    uint32 gimbal_device_id = 2; // Gimbal device ID that this gimbal manager is responsible for.
+    float roll_min = 3; // [rad] Minimum hardware roll angle (positive: rolling to the right, negative: rolling to the left)
+    float roll_max = 4; // [rad] Maximum hardware roll angle (positive: rolling to the right, negative: rolling to the left)
+    float pitch_min = 5; // [rad] Minimum pitch angle (positive: up, negative: down)
+    float pitch_max = 6; // [rad] Maximum pitch angle (positive: up, negative: down)
+    float yaw_min = 7; // [rad] Maximum pitch angle (positive: up, negative: down)
+    float yaw_max = 8; // [rad] Maximum yaw angle (positive: to the right, negative: to the left)
+}
+
+// Result type.
+message GimbalManagerServerResult {
+    // Possible results returned for action requests.
+    enum Result {
+        RESULT_UNKNOWN = 0; // Unknown result
+        RESULT_SUCCESS = 1; // Command executed successfully
+        RESULT_IN_PROGRESS = 2; // Command in progress
+        RESULT_BUSY = 3; // Camera is busy and rejected command
+        RESULT_DENIED = 4; // Camera denied the command
+        RESULT_ERROR = 5; // An error has occurred while executing the command
+        RESULT_TIMEOUT = 6; // Command timed out
+        RESULT_WRONG_ARGUMENT = 7; // Command has wrong argument(s)
+        RESULT_NO_SYSTEM = 8; // No system connected
+    }
+
+    Result result = 1; // Result enum value
+    string result_str = 2; // Human-readable English string describing the result
+}
+
+// Information about the gimbal manager status.
+message Status {
+    uint32 flags = 1; // High level gimbal manager flags currently applied.
+    uint32 gimbal_device_id = 2; // Gimbal device ID that this gimbal manager is responsible for. Component ID of gimbal device (or 1-6 for non-MAVLink gimbal).
+    uint32 primary_control_sysid = 3; // System ID of MAVLink component with primary control, 0 for none.
+    uint32 primary_control_compid = 4; // Component ID of MAVLink component with primary control, 0 for none.
+    uint32 secondary_control_sysid = 5; // System ID of MAVLink component with secondary control, 0 for none.
+    uint32 secondary_control_compid = 6; // Component ID of MAVLink component with secondary control, 0 for none.
+}
+
+// Position type in global coordinates.
+message RoiLocation {
+    uint32 gimbal_id = 1; // Component ID of gimbal device to address
+    double latitude_deg = 2; // Latitude in degrees (range: -90 to +90)
+    double longitude_deg = 3; // Longitude in degrees (range: -180 to +180)
+    float absolute_altitude_m = 4; // Altitude AMSL (above mean sea level) in metres
+}
