@@ -13,7 +13,9 @@ service GimbalManagerServerService {
     rpc SetInformation(SetInformationRequest) returns(SetInformationResponse) { option (mavsdk.options.async_type) = SYNC; }
     // Get the GPS location of where the estimator has been initialized.
     rpc GetStatus(GetStatusRequest) returns(GetStatusResponse) { option (mavsdk.options.async_type) = SYNC; }
-    // Subscribe to gimbal manager set roi requests
+    // Subscribe set attiutde requests
+    rpc SubscribeSetAttitude(SubscribeSetAttitudeRequest) returns(stream SetAttitudeResponse) { option (mavsdk.options.async_type) = ASYNC; }
+    // Subscribe set roi requests
     rpc SubscribeSetRoi(SubscribeSetRoiRequest) returns(stream SetRoiResponse) { option (mavsdk.options.async_type) = ASYNC; }
 }
 
@@ -28,6 +30,11 @@ message SetInformationResponse {
 message GetStatusRequest {}
 message GetStatusResponse {
     Status status = 1;
+}
+
+message SubscribeSetAttitudeRequest {}
+message SetAttitudeResponse {
+    SetAttitude set_attitude = 1; // Set Attitude
 }
 
 message SubscribeSetRoiRequest {}
@@ -76,6 +83,29 @@ message Status {
     uint32 secondary_control_compid = 6; // Component ID of MAVLink component with secondary control, 0 for none.
 }
 
+/*
+ * Quaternion type.
+ *
+ * All rotations and axis systems follow the right-hand rule.
+ * The Hamilton quaternion product definition is used.
+ * A zero-rotation quaternion is represented by (1,0,0,0).
+ * The quaternion could also be written as w + xi + yj + zk.
+ *
+ * For more info see: https://en.wikipedia.org/wiki/Quaternion
+ */
+message Quaternion {
+    float w = 1; // Quaternion entry 0, also denoted as a
+    float x = 2; // Quaternion entry 1, also denoted as b
+    float y = 3; // Quaternion entry 2, also denoted as c
+    float z = 4; // Quaternion entry 3, also denoted as d
+}
+
+// Set Attitude
+message SetAttitude {
+     uint32 flags = 1;
+     Quaternion attitude_quaternion = 2;
+}
+
 // Position type in global coordinates.
 message RoiLocation {
     uint32 gimbal_id = 1; // Component ID of gimbal device to address
@@ -83,3 +113,5 @@ message RoiLocation {
     double longitude_deg = 3; // Longitude in degrees (range: -180 to +180)
     float absolute_altitude_m = 4; // Altitude AMSL (above mean sea level) in metres
 }
+
+
