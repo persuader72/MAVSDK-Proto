@@ -11,6 +11,10 @@ option java_outer_classname = "GimbalManagerServerProto";
 service GimbalManagerServerService {
     // Sets the gimbal manager information. This must be called as soon as the gimbal manager server is created.
     rpc SetInformation(SetInformationRequest) returns(SetInformationResponse) { option (mavsdk.options.async_type) = SYNC; }
+    // Subscribe for device discovered events
+    rpc SubscribeDeviceDiscovered(SubscribeDeviceDiscoveredRequest) returns(stream DeviceDiscoveredResponse) {}
+    // Subscribe for device attitude status events
+    rpc SubscribeDeviceAttitudeStatus(SubscribeDeviceAttitudeStatusRequest) returns(stream DeviceAttitudeStatusResponse) {}
     // Get the GPS location of where the estimator has been initialized.
     rpc GetStatus(GetStatusRequest) returns(GetStatusResponse) { option (mavsdk.options.async_type) = SYNC; }
     // Subscribe set attiutde requests
@@ -25,6 +29,16 @@ message SetInformationRequest {
 
 message SetInformationResponse {
     GimbalManagerServerResult gimbal_manager_server_result = 1;
+}
+
+message SubscribeDeviceDiscoveredRequest {}
+message DeviceDiscoveredResponse {
+    Information device_discovered = 1;
+}
+
+message SubscribeDeviceAttitudeStatusRequest {}
+message DeviceAttitudeStatusResponse {
+    DeviceAttitudeStatus device_attitude_status = 1;
 }
 
 message GetStatusRequest {}
@@ -42,6 +56,23 @@ message SetRoiResponse {
     RoiLocation roi_location = 1; // The next roi_location
 }
 
+/*
+ * Quaternion type.
+ *
+ * All rotations and axis systems follow the right-hand rule.
+ * The Hamilton quaternion product definition is used.
+ * A zero-rotation quaternion is represented by (1,0,0,0).
+ * The quaternion could also be written as w + xi + yj + zk.
+ *
+ * For more info see: https://en.wikipedia.org/wiki/Quaternion
+ */
+message Quaternion {
+    float w = 1; // Quaternion entry 0, also denoted as a
+    float x = 2; // Quaternion entry 1, also denoted as b
+    float y = 3; // Quaternion entry 2, also denoted as c
+    float z = 4; // Quaternion entry 3, also denoted as d
+}
+
 // Set Gimbal manager hardware informations.
 message Information {
     uint32 cap_flags = 1; // Bitmap of gimbal capability flags.
@@ -52,6 +83,16 @@ message Information {
     float pitch_max = 6; // [rad] Maximum pitch angle (positive: up, negative: down)
     float yaw_min = 7; // [rad] Maximum pitch angle (positive: up, negative: down)
     float yaw_max = 8; // [rad] Maximum yaw angle (positive: to the right, negative: to the left)
+}
+
+message DeviceAttitudeStatus {
+    uint32 time_boot_ms = 1; // Timestamp (time since system boot).
+    uint32 flags = 2; // Current gimbal flags set.
+    Quaternion q = 3; // Quaternion components, w, x, y, z
+    float angular_velocity_x = 4; // X component of angular velocity (positive: rolling to the right). NaN if unknown.
+    float angular_velocity_y = 5; // Y component of angular velocity (positive: rolling to the right). NaN if unknown.
+    float angular_velocity_z = 6; // Z component of angular velocity (positive: rolling to the right). NaN if unknown.
+    uint32 failure_flags = 7; // Failure flags (0 for no failure)
 }
 
 // Result type.
@@ -81,23 +122,6 @@ message Status {
     uint32 primary_control_compid = 4; // Component ID of MAVLink component with primary control, 0 for none.
     uint32 secondary_control_sysid = 5; // System ID of MAVLink component with secondary control, 0 for none.
     uint32 secondary_control_compid = 6; // Component ID of MAVLink component with secondary control, 0 for none.
-}
-
-/*
- * Quaternion type.
- *
- * All rotations and axis systems follow the right-hand rule.
- * The Hamilton quaternion product definition is used.
- * A zero-rotation quaternion is represented by (1,0,0,0).
- * The quaternion could also be written as w + xi + yj + zk.
- *
- * For more info see: https://en.wikipedia.org/wiki/Quaternion
- */
-message Quaternion {
-    float w = 1; // Quaternion entry 0, also denoted as a
-    float x = 2; // Quaternion entry 1, also denoted as b
-    float y = 3; // Quaternion entry 2, also denoted as c
-    float z = 4; // Quaternion entry 3, also denoted as d
 }
 
 // Set Attitude
