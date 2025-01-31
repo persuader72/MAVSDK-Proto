@@ -19,6 +19,9 @@ service InfoService {
     rpc GetVersion(GetVersionRequest) returns(GetVersionResponse) { option (mavsdk.options.async_type) = SYNC; }
     // Get the speed factor of a simulation (with lockstep a simulation can run faster or slower than realtime).
     rpc GetSpeedFactor(GetSpeedFactorRequest) returns(GetSpeedFactorResponse) { option (mavsdk.options.async_type) = SYNC; }
+
+    // Subscribe to 'flight information' updates.
+    rpc SubscribeFlightInformation(SubscribeFlightInformationRequest) returns(stream FlightInformationResponse) { option (mavsdk.options.async_type) = ASYNC; }
 }
 
 message GetFlightInformationRequest {}
@@ -51,10 +54,17 @@ message GetSpeedFactorResponse {
     double speed_factor = 2; // Speed factor of simulation
 }
 
+message SubscribeFlightInformationRequest {}
+message FlightInformationResponse {
+    FlightInfo flight_info = 1; // The next flight information
+}
+
 // System flight information.
 message FlightInfo {
     uint32 time_boot_ms = 1; // Time since system boot
     uint64 flight_uid = 2; // Flight counter. Starts from zero, is incremented at every disarm and is never reset (even after reboot)
+    uint32 duration_since_arming_ms = 3; // Duration since arming in milliseconds
+    uint32 duration_since_takeoff_ms = 4; // Duration since takeoff in milliseconds
 }
 
 // System identification.
